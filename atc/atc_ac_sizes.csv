@@ -1,0 +1,6 @@
+sample,utf8,gzip,ATC-bitpack+zlib,ATC-arith,rt_bitpack,rt_arith
+short,23,43,30,18,True,True
+english,93,101,102,66,True,True
+paragraph,218,170,208,134,True,True
+code,61,81,68,45,True,True
+chat,79,92,84,55,True,True
