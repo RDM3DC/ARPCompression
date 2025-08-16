@@ -1,0 +1,6 @@
+sample,ascii_len,gzip_len,atc_ac_len,roundtrip_ok
+short_phrase,23,43,137,False
+english_sentence,93,101,524,False
+paragraph,218,170,1068,False
+code_snippet,61,81,359,False
+chat_like,79,92,436,False

@@ -1,0 +1,1 @@
+def entropy(x): return -sum(p*math.log2(p) for p in x if p>0)

@@ -1,0 +1,1 @@
+user: hey what's up??   bot: not much, just compressin' text...   user: nice!!!

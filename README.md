@@ -95,16 +95,6 @@ restored = dequantize(pkt)       # approx reconstruction
 
 ---
 
-## Research
-
-CMC rate–distortion and bias sweeps:
-
-- Script: `cmc/cmc_rd_sweep.py`
-- Data: [`cmc_rd.csv`](cmc_rd.csv), [`cmc_bias.csv`](cmc_bias.csv)
-- Plots: `sin_rd.png`, `ramp_rd.png`, `sin_bias_vs_alpha_over_mu.png`, `ramp_bias_vs_alpha_over_mu.png`
-
----
-
 ## Notes
 
 - **ATC:** transports JSON with `{ carriers: str, style_b64: base64 }` (1 byte/style per carrier).
