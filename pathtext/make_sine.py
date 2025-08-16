@@ -1,10 +1,5 @@
 
-"""
-Generate a simple sine-wave anchors.json
-Usage:
-  python -m pathtext.make_sine anchors.json [--width 800 --height 300 --cycles 2.5 --amp 40 --n 200]
-"""
-import argparse, json, math
+import argparse, math, json
 from pathlib import Path
 
 def sine_path(width=800, height=300, cycles=2.5, amp=40, n=200):
@@ -26,7 +21,6 @@ def main():
     ap.add_argument("--amp", type=float, default=40)
     ap.add_argument("--n", type=int, default=200)
     args = ap.parse_args()
-
     anchors = sine_path(args.width, args.height, args.cycles, args.amp, args.n)
     obj = {"paths": [{"id":"p0", "anchors": anchors}]}
     Path(args.out).write_text(json.dumps(obj), encoding="utf-8")

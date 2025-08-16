@@ -1,7 +1,7 @@
 
 import json, argparse
 from pathlib import Path
-from .pathtext import to_svg
+from .binfmt import pack_binary
 
 def main():
     ap = argparse.ArgumentParser()
@@ -9,8 +9,9 @@ def main():
     ap.add_argument("out")
     args = ap.parse_args()
     obj = json.loads(Path(args.inp).read_text(encoding="utf-8"))
-    to_svg(obj, args.out)
-    print(f"Wrote {args.out}")
+    blob = pack_binary(obj)
+    Path(args.out).write_bytes(blob)
+    print(f"Wrote {args.out} ({len(blob)} bytes)")
 
 if __name__ == "__main__":
     main()

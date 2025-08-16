@@ -1,12 +1,4 @@
 
-"""
-ATC-PATH CLI — encode
-Usage:
-  python -m pathtext.encode --text in.txt --anchors anchors.json --out out.atcp.json [--spacing 14] [--offset 0] [--pathid p0]
-
-- in.txt: UTF-8 text
-- anchors.json: {"paths": [{"id":"p0","anchors":[[x,y],...]}]}
-"""
 import json, argparse
 from pathlib import Path
 from .pathtext import encode_pathtext
@@ -18,9 +10,8 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--spacing", type=int, default=14)
     ap.add_argument("--offset", type=int, default=0)
-    ap.add_argument("--pathid", default=None, help="Use this path id from anchors.json (default: first path)")
+    ap.add_argument("--pathid", default=None)
     args = ap.parse_args()
-
     text = Path(args.text).read_text(encoding="utf-8")
     anchors_obj = json.loads(Path(args.anchors).read_text(encoding="utf-8"))
     paths = anchors_obj["paths"]
