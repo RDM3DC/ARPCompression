@@ -1,0 +1,6 @@
+sample,utf8,gzip,ATC-bitpack+zlib,roundtrip_ok
+short_phrase,23,43,30,True
+english_sentence,93,101,102,True
+paragraph,218,170,208,True
+code_snippet,61,81,68,True
+chat_like,79,92,84,True
