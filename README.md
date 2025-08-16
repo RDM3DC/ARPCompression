@@ -1,71 +1,102 @@
-# Adaptive Text Compression (ATC) — Prototype
+# Adaptive Compression Suite (ACS)
 
-This repo demonstrates **overlay compression** for text: we remove visible redundancy (like spaces/punctuation/case)
-and **embed it into per-character style bits**. The transport format is:
-- `carriers`: a plain Unicode string (no spaces, normalized lowercase)
-- `style_bytes`: a byte per carrier character (base64-encoded in JSON)
+A single repo with **three** distinct compression methods we've developed:
 
-This is a **lossless** round-trip for typical English text with spaces and common punctuation.
+1. **ATC — Adaptive Text Compression** (lossless, text):  
+   Strips visible spaces/punctuation/case and encodes them in per-character **style bytes** alongside a compact carrier string.
 
-## Bit layout (per character)
+2. **CMC — Curve‑Memory Compression** (event-driven, geometry-aware, typically lossy):  
+   Encodes **anchors** at curvature/turning events and reconstructs with an ARP‑style smoother for perceptual fidelity on signals/paths.
 
-```
-bit 0-1: spaces_before (0..3)          # number of spaces inserted before this char
-bit 2-4: punct_after  (0: none,
-                       1: '.', 2: ',', 3: '!', 4: '?', 5: ';', 6: ':')
-bit 5  : capitalize_self (0/1)          # if 1, uppercase this char in decode
-bit 6  : reserved
-bit 7  : reserved
-```
+3. **GPUC — GPU/Tensor Compression** (numeric arrays):  
+   CPU-safe **quantization** and **zero‑suppression**; optional CUDA path via PyTorch if available. Targets inter-device transfer & storage.
 
-We **strip spaces** and **lowercase** during encoding. We **store** spaces/case/punctuation in style bits,
-achieving an **overlay-style compression**: fewer visible characters, same information.
+---
 
-> This is a research prototype of the idea you proposed: *characters as multi-channel tokens*.
-> Future versions can encode grammar tags, word boundaries, or even semantics into the style byte(s).
-
-## Quickstart
+## Install
 
 ```bash
 pip install -e .
-python -m atc.examples.demo
 ```
 
-## Python API
+## Command Line (selected)
+
+```bash
+# ATC (text)
+acs-atc-encode --text "I am in it, okay?  YES!" --out atc.json
+acs-atc-decode --in atc.json
+
+# CMC (1D signals)
+acs-cmc-encode-1d --in signal.npy --tau 0.02 --max_err 0.01 --out cmc.json
+acs-cmc-decode-1d --in cmc.json --n 1000 --out recon.npy
+
+# GPUC (arrays)
+acs-gpuc-quantize --in array.npy --out array_q.npz --bits 8
+acs-gpuc-dequantize --in array_q.npz --out array_restored.npy
+
+acs-gpuc-zerosuppress --in array.npy --out array_zs.npz --eps 0.0
+acs-gpuc-unsuppress --in array_zs.npz --out array_restored.npy
+```
+
+> `*.npy/npz` are standard NumPy formats for easy round‑trips without extra deps.
+> CUDA is optional; if PyTorch is present, `gpuc` will use GPU tensors transparently.
+
+---
+
+## Repo Layout
+
+```
+adaptive-compression-suite/
+ ├── atc/      # Adaptive Text Compression (lossless)
+ ├── cmc/      # Curve-Memory Compression (event-driven anchors + ARP smoother)
+ ├── gpuc/     # GPU/Tensor Compression (quantization + zero suppression, optional CUDA)
+ ├── tests/    # pytest
+ ├── LICENSE   # MIT
+ ├── pyproject.toml
+ ├── setup.cfg
+ └── .github/workflows/ci.yml
+```
+
+---
+
+## Quick Examples
+
+### ATC (text lossless)
 
 ```python
 from atc.encoder import encode
 from atc.decoder import decode
 
-text = "I am in it, okay?  YES!"
-pkg = encode(text)
-restored = decode(pkg)
-assert text == restored
+pkg = encode("I am in it, okay?  YES!")
+assert decode(pkg) == "I am in it, okay?  YES!"
 ```
 
-## CLI
+### CMC (1D signals)
 
-```bash
-# Encode
-python -m atc.encoder --text "I am in it, okay?  YES!" --out /tmp/atc.json
+```python
+import numpy as np
+from cmc.one_d import encode_1d, decode_1d
 
-# Decode
-python -m atc.decoder --in /tmp/atc.json
+x = np.sin(np.linspace(0, 4*np.pi, 1000))
+pkg = encode_1d(x, tau=0.01, max_err=0.005)
+y  = decode_1d(pkg, n=len(x), alpha=0.2, mu=0.01)
 ```
 
-## Transport format (JSON)
+### GPUC (arrays)
 
-```json
-{
-  "carriers": "iamiinitoakyyes",
-  "style_b64": "...."  # base64-encoded bytes, one per carrier char
-}
+```python
+import numpy as np
+from gpuc.quant import quantize, dequantize
+
+arr = np.random.randn(1024, 1024).astype(np.float32)
+pkt = quantize(arr, bits=8)      # -> dict to save as .npz
+restored = dequantize(pkt)       # approx reconstruction
 ```
 
-## Notes & Roadmap
+---
 
-- Current scheme targets ASCII letters + basic punctuation and spaces.
-- Multi-space runs >3 are encoded across successive carriers (rolling budget of 2 bits each).
-- Extend to multi-byte style fields, grammatical tags, or language-specific compaction.
-- Add steganographic mode using zero-width codepoints for transport (optional and careful!).
-- Optional real styled text renderer (e.g., HTML/CSS) mapping style bits to **actual** visual styles.
+## Notes
+
+- **ATC:** transports JSON with `{ carriers: str, style_b64: base64 }` (1 byte/style per carrier).
+- **CMC:** stores anchors (indices/values), optional local slope, and flags; decoder runs ARP‑style smoothing.
+- **GPUC:** supports `int8` quantization (per‑tensor or per‑block) and zero‑suppression of near‑zeros; CPU reference implementations included, CUDA optional via PyTorch.
