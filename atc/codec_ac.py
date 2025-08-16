@@ -3,10 +3,13 @@ import base64, json
 from typing import Dict, List
 from .encoder import encode as atc_encode
 from .decoder import decode as atc_decode
-from .utils import parse_style_byte
 from .arith import Model, Encoder, Decoder
 
 ZERO_WIDTH = "\u200b"
+
+# Punctuation codes as produced by the encoder:
+# 0:none, 1:'.', 2:',', 3:'!', 4:'?', 5:';', 6:':', 7:other
+ENDER_CODES = {1,3,4}
 
 BASE_ALPHABET = {**{chr(ord('a')+i): i for i in range(26)},
                  **{str(i): 26+i for i in range(10)},
@@ -57,46 +60,65 @@ def pack(text: str) -> Dict[str, str]:
     m_car = Model(base_size + len(ext_chars))
     for s in _to_symbols(carriers, ext_map):
         enc.encode(m_car, s)
-    # spaces
+
+    # spaces (single model; keep stream order compatibility)
     m_sp = Model(4)
-    for s in spaces: enc.encode(m_sp, s)
-    # puncts
+    for s in spaces:
+        enc.encode(m_sp, s)
+
+    # puncts (single model)
     m_pu = Model(8)
-    for s in puncts: enc.encode(m_pu, s)
-    # caps
-    m_ca = Model(2)
-    for s in caps: enc.encode(m_ca, s)
+    for p in puncts:
+        enc.encode(m_pu, p)
+
+    # caps with context on previous punct ender (we know puncts list already)
+    m_ca_norm = Model(2)
+    m_ca_after_end = Model(2)
+    prev_punct = 0
+    for i, c in enumerate(caps):
+        mdl = m_ca_after_end if (prev_punct in ENDER_CODES) else m_ca_norm
+        enc.encode(mdl, c)
+        prev_punct = puncts[i]
 
     blob = enc.finish()
     return {
-        "format": "ATC-AC2-v1",
+        "format": "ATC-AC2-v2",
         "n": len(style_bytes),
         "ext": "".join(ext_chars),
         "data_b64": base64.b64encode(blob).decode("ascii")
     }
 
 def unpack(obj: Dict[str, str]) -> str:
-    assert obj["format"] == "ATC-AC2-v1"
+    assert obj["format"] in ("ATC-AC2-v1", "ATC-AC2-v2")
     n = int(obj["n"])
     ext_chars = list(obj.get("ext",""))
     data = base64.b64decode(obj["data_b64"])
 
     dec = Decoder(data)
     base_size = len(BASE_ALPHABET)
+
     # carriers
     m_car = Model(base_size + len(ext_chars))
     carriers_sym = [dec.decode(m_car) for _ in range(n)]
     carriers = _to_carriers(carriers_sym, ext_chars)
 
-    # spaces
+    # spaces (single model; must match encoder order)
     m_sp = Model(4)
     spaces = [dec.decode(m_sp) for _ in range(n)]
-    # puncts
+
+    # puncts (single model)
     m_pu = Model(8)
     puncts = [dec.decode(m_pu) for _ in range(n)]
-    # caps
-    m_ca = Model(2)
-    caps = [dec.decode(m_ca) for _ in range(n)]
+
+    # caps with context on previous punct ender
+    m_ca_norm = Model(2)
+    m_ca_after_end = Model(2)
+    caps = [0]*n
+    prev_punct = 0
+    for i in range(n):
+        mdl = m_ca_after_end if (prev_punct in ENDER_CODES) else m_ca_norm
+        caps[i] = dec.decode(mdl)
+        prev_punct = puncts[i]
 
     # rebuild style bytes
     style_bytes = bytearray(n)

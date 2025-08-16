@@ -102,16 +102,17 @@ restored = dequantize(pkt)       # approx reconstruction
 - **GPUC:** supports `int8` quantization (per‑tensor or per‑block) and zero‑suppression of near‑zeros; CPU reference implementations included, CUDA optional via PyTorch.
 
 
-## ATC CLI (arithmetic-coded)
+## ATC-PATH (curved sentences)
 
-Quickstart:
+Encode text onto a 2D path and render as SVG.
 
 ```bash
-# compress UTF-8 text to .atc (JSON with header+data_b64)
-python -m atc.compress bench/samples/paragraph.txt out.atc
+# 1) Make a sine-wave anchors file
+python -m pathtext.make_sine pathtext/anchors.json
 
-# decompress back to UTF-8 text
-python -m atc.decompress out.atc roundtrip.txt
+# 2) Encode text + anchors into an ATC-PATH container
+python -m pathtext.encode --text bench/samples/paragraph.txt --anchors pathtext/anchors.json --out pathtext/paragraph.atcp.json
+
+# 3) Render to SVG
+python -m pathtext.render pathtext/paragraph.atcp.json pathtext/paragraph.svg
 ```
-
-The CLI uses the arithmetic-coded ATC (`atc/codec_ac.py`). For benchmarks, see `bench/`.

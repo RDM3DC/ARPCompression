@@ -1,0 +1,6 @@
+sample,utf8,gzip,ATC+arith(v2),rt_ok
+short,23,43,18,True
+english,93,101,66,True
+paragraph,218,170,134,True
+code,61,81,45,True
+chat,79,92,55,True
