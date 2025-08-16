@@ -100,3 +100,18 @@ restored = dequantize(pkt)       # approx reconstruction
 - **ATC:** transports JSON with `{ carriers: str, style_b64: base64 }` (1 byte/style per carrier).
 - **CMC:** stores anchors (indices/values), optional local slope, and flags; decoder runs ARP‑style smoothing.
 - **GPUC:** supports `int8` quantization (per‑tensor or per‑block) and zero‑suppression of near‑zeros; CPU reference implementations included, CUDA optional via PyTorch.
+
+
+## ATC CLI (arithmetic-coded)
+
+Quickstart:
+
+```bash
+# compress UTF-8 text to .atc (JSON with header+data_b64)
+python -m atc.compress bench/samples/paragraph.txt out.atc
+
+# decompress back to UTF-8 text
+python -m atc.decompress out.atc roundtrip.txt
+```
+
+The CLI uses the arithmetic-coded ATC (`atc/codec_ac.py`). For benchmarks, see `bench/`.

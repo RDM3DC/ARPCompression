@@ -15,7 +15,8 @@ except Exception:
 
 # Repo imports
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from atc.codec_simple import pack as atc_pack, unpack as atc_unpack
+from atc.codec_simple import pack as atc_pack_z, unpack as atc_unpack_z
+from atc.codec_ac import pack as atc_pack_ac, unpack as atc_unpack_ac
 
 def size_utf8(b: bytes) -> int:
     return len(b)
@@ -43,18 +44,6 @@ def zstd_compress(b: bytes, level: int = 10) -> bytes:
 def zstd_decompress(b: bytes) -> bytes:
     dctx = zstd.ZstdDecompressor()
     return dctx.decompress(b)
-
-def atc_compress(b: bytes) -> bytes:
-    obj = atc_pack(b.decode("utf-8"))
-    return base64.b64decode(obj["data_b64"])
-
-def atc_decompress(b: bytes) -> bytes:
-    # Need header to decode; for bench fairness we include header inside a JSON blob alongside bytes.
-    # For this bench, we'll store {"header":..., "data_b64":...} as JSON bytes.
-    # So atc_decompress expects that full blob.
-    obj = json.loads(b.decode("utf-8"))
-    text = atc_unpack(obj)
-    return text.encode("utf-8")
 
 def main():
     ap = argparse.ArgumentParser()
@@ -87,21 +76,30 @@ def main():
             t2 = time.perf_counter(); raw_zs = zstd_decompress(zs); t3 = time.perf_counter()
             rows.append({"file": name, "codec": "zstd", "size": len(zs), "enc_ms": (t1-t0)*1000, "dec_ms": (t3-t2)*1000, "ok": raw_zs == raw})
 
-        # ATC (store full JSON blob for decompression run to be fair)
+        # ATC (bitpack+zlib): store JSON blob for size and decode
         t0 = time.perf_counter()
-        obj = atc_pack(raw.decode("utf-8"))
-        b = json.dumps(obj).encode("utf-8")
+        obj_z = atc_pack_z(raw.decode("utf-8"))
+        blob_z = json.dumps(obj_z).encode("utf-8")
         t1 = time.perf_counter()
         t2 = time.perf_counter()
-        text = atc_unpack(obj)
-        raw_atc = text.encode("utf-8")
+        text_z = atc_unpack_z(obj_z)
+        raw_atc_z = text_z.encode("utf-8")
         t3 = time.perf_counter()
-        rows.append({"file": name, "codec": "atc", "size": len(b), "enc_ms": (t1-t0)*1000, "dec_ms": (t3-t2)*1000, "ok": raw_atc == raw})
+        rows.append({"file": name, "codec": "atc_bitpack", "size": len(blob_z), "enc_ms": (t1-t0)*1000, "dec_ms": (t3-t2)*1000, "ok": raw_atc_z == raw})
 
-    # Save CSV
+        # ATC (arithmetic): store JSON blob for size and decode
+        t0 = time.perf_counter()
+        obj_ac = atc_pack_ac(raw.decode("utf-8"))
+        blob_ac = json.dumps(obj_ac).encode("utf-8")
+        t1 = time.perf_counter()
+        t2 = time.perf_counter()
+        text_ac = atc_unpack_ac(obj_ac)
+        raw_atc_ac = text_ac.encode("utf-8")
+        t3 = time.perf_counter()
+        rows.append({"file": name, "codec": "atc_arith", "size": len(blob_ac), "enc_ms": (t1-t0)*1000, "dec_ms": (t3-t2)*1000, "ok": raw_atc_ac == raw})
+
     out_csv = Path(args.out_csv)
     out_csv.parent.mkdir(parents=True, exist_ok=True)
-    import csv
     with open(out_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["file","codec","size","enc_ms","dec_ms","ok"])
         w.writeheader()
