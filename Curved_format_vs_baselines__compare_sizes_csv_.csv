@@ -1,0 +1,8 @@
+,label,artifact,bytes,bpc
+0,Plain UTF-8 text,utf8,75,8.0
+6,SVG straight lines,svg_straight,237,25.28
+2,ATC-PATH binary (no dict),atcp2_nodict,927,98.88
+3,ATC-PATH binary (dict),atcp2_dict,977,104.21333333333334
+5,SVG curved (dict),svg_curved_dict,8390,894.9333333333333
+1,ATC-PATH JSON (no dict),json,8437,899.9466666666667
+4,SVG curved (no dict),svg_curved,15980,1704.5333333333333
