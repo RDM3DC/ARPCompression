@@ -1,5 +1,5 @@
 
-import json, argparse
+import argparse, json
 from pathlib import Path
 from .pathtext import encode_pathtext
 
@@ -10,16 +10,13 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--spacing", type=int, default=14)
     ap.add_argument("--offset", type=int, default=0)
-    ap.add_argument("--pathid", default=None)
+    ap.add_argument("--pathid", default="p0")
     args = ap.parse_args()
     text = Path(args.text).read_text(encoding="utf-8")
-    anchors_obj = json.loads(Path(args.anchors).read_text(encoding="utf-8"))
-    paths = anchors_obj["paths"]
-    pid = args.pathid or paths[0]["id"]
-    layout = [{"path": pid, "range": [0, len(text)], "spacing_px": args.spacing, "offset_px": args.offset}]
-    container = encode_pathtext(text, paths, layout, units="px", metadata={"source_text": Path(args.text).name})
+    anchors = json.loads(Path(args.anchors).read_text(encoding="utf-8"))["paths"][0]["anchors"]
+    container = encode_pathtext(text, [{"id":args.pathid,"anchors":anchors}], [{"path":args.pathid,"range":[0,len(text)],"spacing_px":args.spacing,"offset_px":args.offset}], "px", {})
     Path(args.out).write_text(json.dumps(container), encoding="utf-8")
-    print(f"Wrote {args.out}")
+    print("Wrote", args.out)
 
 if __name__ == "__main__":
     main()
