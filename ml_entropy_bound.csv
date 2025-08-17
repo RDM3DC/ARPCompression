@@ -1,0 +1,8 @@
+Metric,Value
+Text H0 (bits/char),3.8707941047292547
+Path points (N),17.0
+Baseline path bits (int16 deltas),576.0
+Entropy path bits (H(dx)+H(dy)),169.2451124973287
+Total bpc: 8b text + fixed path,15.68
+Total bpc: H0 text + fixed path,11.550794104729254
+Total bpc: H0 text + entropy path,6.127395604693637
