@@ -1,0 +1,7 @@
+stage,bpc
+"Baseline (AdaptiveCAD, ε≈5)",8.1
+Dict reuse (glyph ops),7.75
+Iter1: + Huffman varints,7.8
+Iter2: multi-level dict,6.5
+Iter3: adaptive λ + GPUC,5.2
+Iter4: plateau,4.9
