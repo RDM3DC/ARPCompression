@@ -1,4 +1,5 @@
 # Adaptive Compression Suite (ACS)
+[![Sponsor](https://img.shields.io/badge/Sponsor-RDM3DC-ff69b4)](https://github.com/sponsors/RDM3DC)
 
 A single repo with **three** distinct compression methods we've developed:
 
